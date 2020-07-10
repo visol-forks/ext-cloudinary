@@ -17,6 +17,7 @@ namespace Visol\Cloudinary\Utility;
 
 use TYPO3\CMS\Core\Resource\FileReference;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
+use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use Visol\Cloudinary\CloudinaryException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -54,6 +55,12 @@ class CloudinaryUtility
     protected $cloudinaryProcessedResourceRepository;
 
     /**
+     * @var \TYPO3\CMS\Core\Resource\StorageRepository
+     * @inject
+     */
+    protected $storageRepository;
+
+    /**
      * @var ResourceStorage|null
      */
     protected $storage;
@@ -67,9 +74,14 @@ class CloudinaryUtility
     {
         $this->storage = $storage;
 
+        # TODO: change me after TYPO3 v9 migration
+        #       GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('cloudinary')
+        $this->extensionConfiguration = (array)unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['cloudinary']);
+
         // Workaround: dependency injection not supported in userFuncs
         $this->mediaRepository = GeneralUtility::makeInstance(\Visol\Cloudinary\Domain\Repository\MediaRepository::class);
         $this->responsiveBreakpointsRepository = GeneralUtility::makeInstance(\Visol\Cloudinary\Domain\Repository\ResponsiveBreakpointsRepository::class);
+
     }
 
     /**
@@ -77,16 +89,23 @@ class CloudinaryUtility
      *
      * @return string
      * @throws CloudinaryException
-     * @deprecated use FalToCloudinaryConverter::toPublicId instead
      */
-    public function getPublicId($filename)
+    public function uploadLocalFileAndGetPublicId($filename, ResourceStorage $storage = null)
     {
+        if (!$storage) {
+            $storage = $this->storageRepository->findByUid(2);
+        }
+        $this->initializeApi($storage);
+        if ($storage->getDriverType() !== CloudinaryDriver::DRIVER_TYPE) {
+            throw new \Exception('adsg');
+        }
+
         try {
             $filename = $this->cleanFilename($filename);
             $imagePathAndFilename = GeneralUtility::getFileAbsFileName($filename);
             $modificationDate = filemtime($imagePathAndFilename);
 
-            $possibleMedias = $this->mediaRepository->findByFilename($filename);
+            $possibleMedias = $this->mediaRepository->findByFilename($filename); // TODO: Add storageID
 
             // check modification date
             $media = null;
@@ -202,7 +221,7 @@ class CloudinaryUtility
         $responsiveBreakpoints = null;
 
         if ($publicIdOrFileReference instanceof FileReference) {
-            $this->initializeApi($publicIdOrFileReference);
+            $this->initializeApi($publicIdOrFileReference->getStorage());
             $publicId = $this->setStorage($publicIdOrFileReference->getStorage())
                 ->computeCloudinaryPublicId($publicIdOrFileReference->getIdentifier());
         } else {
@@ -228,18 +247,14 @@ class CloudinaryUtility
     /**
      * @param FileReference $fileReference
      */
-    protected function initializeApi(FileReference $fileReference)
+    protected function initializeApi(ResourceStorage $storage)
     {
-        $storage = $fileReference->getStorage();
-
         // Check the file is stored on the right storage
         // If not we should trigger an execption
         if ($storage->getDriverType() !== CloudinaryDriver::DRIVER_TYPE) {
             $message = sprintf(
-                'CloudinaryUtility: wrong storage! Can not initialize Cloudinary API with file reference "%s" original file "%s:%s"',
-                $fileReference->getUid(),
-                $fileReference->getOriginalFile()->getUid(),
-                $fileReference->getOriginalFile()->getIdentifier()
+                'CloudinaryUtility: wrong storage! Can not initialize with storage type "%s".',
+                $storage->getDriverType()
             );
             throw new \Exception($message, 1590401459);
         }
