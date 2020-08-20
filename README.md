@@ -22,7 +22,6 @@ composer require visol/cloudinary
 Note that the extension will require the library `cloudinary/cloudinary_php` and 
 be automatically downloaded into `vendor`.
 
-
 Configuration
 =============
 
@@ -34,13 +33,13 @@ For a new "file storage" record, then:
 * Pick the **Cloudinary** driver in the driver dropdown menu.
 * Fill in the requested fields. Password and secrets can be found from the [Cloudinary Console](https://cloudinary.com/console).
 
-
-![](Documentation/driver-configuration-02.png)
-
 Once the record is saved, you should see a message telling the connection could be successfully established. 
-You can now head to the File module list. 
-Notice the first time you click on a folder in the File list module, 
-it will take some time since the images must be fetched and put into the cloudinary cache.
+Then we must execute this command to index the storage.
+
+```bash
+# Where [0-9] is file storage uid
+./vendor/bin/typo3 cloudinary:scan [0-9]
+```
 
 ![](Documentation/driver-configuration-01.png)
 
@@ -98,10 +97,61 @@ This will produces the following output:
 CLI Command
 -----------
 
+Summary of the `cloudinary` commands
+
+```bash
+# Scan and warm up a cloudinary storage.
+cloudinary:scan
+
+# Query a given storage such a list, count files or folders
+cloudinary:query
+
+# Move a bunch of images to a cloudinary storage. Consult the README.md for more info.
+cloudinary:move
+
+# After "moving" files you should fix the jpeg extension. See below
+cloudinary:fix
+
+# Copy a bunch of images from a local storage to a cloudinary storage
+cloudinary:copy
+
+# Run a suite of Acceptance Tests
+cloudinary:tests
+```
+
+### cloudinary:scan
+
+**Important!**
+Scan a remote cloudinary bucket and index the data in TYPO3 
+We use table `tx_cloudinary_resource` and `tx_cloudinary_folder` to mirror the resources and folders of Cloudinary.
+
+The data from these tables is kept in sync whenever a file is changed in TYPO3 (upload, rename, move, etc...). It is however a good idea
+to setup a daily scheduler to scan the data so that we can detect if anything has changed on the cloudinary bucket (add or remove resources).
+
+```
+./vendor/bin/typo3 cloudinary:scan [0-9]
+```
+
+### cloudinary:query
+
+
+```bash
+./vendor/bin/typo3 cloudinary:query 2 --recursive --filter="---[0-9,a-z]*\\." --delete
+```
+
+### cloudinary:move and cloudinary:fix
+
 Move bunch of images from a local storage to a cloudinary storage.
 
+Tip: The copy / move process can be slow. To sync / upload a bunch of files beforehand, you can use the Cloudinary CLI which is convenient to upload
+many resources at once. This will speed up the process.
+
+```bash
+cld sync --push localFolder remoteFolder
+```
+
 **CAUTIOUS!**
-1. Moving means: we are "manually" uploading a file (skipping FAL API)
+1. We are "directly" uploading a file with the Cloudinary API (skipping FAL API)
 to the Cloudinary storage and deleting the one from the local storage (rm -f FILE) 
 Finally we are changing the `sys_file.storage value` to the cloudinary storage.
 The file uid will be kept!
@@ -123,8 +173,7 @@ The file uid will be kept!
 ```
 
 After "moving" files you should fix the jpeg extension for the Cloudinary storage by running
-the command below.
-It is worth mentioning that Cloudinary stripped the file extension for images. For instance
+the command below. It is worth mentioning that Cloudinary stripped the file extension for images. For instance
 a file `image.jpg` or `image.jpeg` uploaded on Cloudinary will be stored as `image`
 without the file extension. By inspecting the file, we will see that Cloudinary only consider 
 the "jpg" extension. Consequently `image.jpeg` will be served as `image.jpg`. 
@@ -136,14 +185,9 @@ This has an implication for us. Record from table `sys_file` must be adjusted an
 # where "2" is the target storage uid (cloudinary)
 ```
 
-Tip: to sync / upload a bunch of files, you can use the Cloudinary CLI which is convenient to upload
-many resources at once.
+### cloudinary:copy
 
-```bash
-cld sync --push localFolder remoteFolder
-```
-
-The extension provides also a tool to copy a bunch of files (restricted to images) from one storage to an another. 
+We can copy a bunch of files from one storage to another. 
 This can be achieved with this command:
 
 ```shell script
@@ -159,12 +203,26 @@ Copying /introduction/images/content/content-quote.png
 Number of file copied: 64
 ``` 
 
-For your information a set of acceptance tests has been implemented to validate the functionnalities
+### cloudinary:tests
+
+A set of acceptance tests has been implemented to validate the functionnalities
 of the driver.
 
 ```bash
 ./vendor/bin/typo3 cloudinary:tests fabidule:1234:ABCD 
 ```
+Web Hook
+--------
+
+Whenever uploading or editing a file through the Cloudinary Manager you can configure an URL
+as a web hook to be called to invalidate the cache in TYPO3. 
+This is highly recommended to keep the data consistent between Cloudinary and TYPO3. 
+
+```shell script
+https://domain.tld/?type=1573555440
+```
+
+**Beware**: Do not rename or move files in the Cloudinary Media Library. TYPO3 will not know about the change. 
 
 Development tools
 -----------------
@@ -177,28 +235,10 @@ Usage:
 
 Available targets:
  help:            Help
- lint:           Display formatting issues in detail
- lint-summary:   Display a summary of formatting issues
- lint-fix:       Automatically fix code formatting issues
+ lint:            Display formatting issues
+ lint-summary:    Display a summary of formatting issues
+ lint-fix:        Automatically fix code formatting issues
+ tests:           Run unit tests
+ tests-coverage:  Run unit tests with code coverage
+ tests-watch:     Watch unit tests and run tests upon changes
 ```
-
-Web Hook
---------
-
-Whenever uploading or editing a file through the Cloudinary Manager you can configure an URL
-as a web hook to be called to invalidate the cache in TYPO3. 
-This is highly recommended to keep the data consistent between Cloudinary and TYPO3. 
-
-```shell script
-https://domain.tld/?type=1573555440
-```
-
-**Beware**: Do not rename, move or delete files in the Cloudinary Media Library. TYPO3 will not know about the change. 
-We may need to implement a web hook. For now, it is necessary to perform these action in the File module in the Backend.
-
-Source of inspiration
----------------------
-
-Adapter for theleague php flysystem for Cloudinary
-
-https://github.com/flownative/flow-google-cloudstorage

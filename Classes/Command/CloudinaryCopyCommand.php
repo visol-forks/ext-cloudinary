@@ -66,7 +66,7 @@ class CloudinaryCopyCommand extends AbstractCloudinaryCommand
     {
         $this
             ->setDescription(
-                'Copy bunch of images from a local storage to a cloudinary storage'
+                'Copy a bunch of images from a local storage to a cloudinary storage'
             )
             ->addOption(
                 'silent',

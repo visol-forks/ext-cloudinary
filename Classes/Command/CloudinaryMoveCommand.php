@@ -56,7 +56,7 @@ class CloudinaryMoveCommand extends AbstractCloudinaryCommand
      */
     protected function configure()
     {
-        $message = 'Move bunch of images to a cloudinary storage. Consult the README.md for more info.';
+        $message = 'Move a bunch of images to a cloudinary storage. Consult the README.md for more info.';
         $this
             ->setDescription(
                 $message

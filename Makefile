@@ -38,7 +38,7 @@ install:
 # * PHP Code Beautifier and Fixer
 #######################
 
-## Display formatting issues in detail
+## Display formatting issues
 lint:
 	phpcs
 
@@ -54,20 +54,20 @@ lint-fix:
 # PHPUnit
 #######################
 
-## Launch PHPUnit
-unit:
+## Run unit tests
+tests:
 	@echo "  $(P) Start unit tests"
 	@$(VENDOR)/bin/phpunit -c $(VENDOR)/typo3/testing-framework/Resources/Core/Build/UnitTests.xml  Tests/Unit
 
-## Launch PHPUnit with code coverage
-unit-coverage:
+## Run unit tests with code coverage
+tests-coverage:
 	@echo "  $(P) Start unit tests with code coverage"
 	@echo
 	@$(VENDOR)/bin/phpunit -c $(VENDOR)/typo3/testing-framework/Resources/Core/Build/UnitTests.xml --whitelist $(PWD)/Classes/ --coverage-html .build Tests/Unit
 
-## Watch unit tests or classes files and launch tests when anything changed
-watch-unit:
+## Watch unit tests and run tests upon changes
+tests-watch:
 	@echo "  $(P) Start unit tests"
-	@while inotifywait -e close_write Tests/Unit/* -e close_write Classes/*; do make unit; done
+	@while inotifywait -e close_write Tests/Unit/* -e close_write Classes/*; do make tests; done
 
-.PHONY: help clean build unit unit-coverage watch-unit install
+.PHONY: help clean build tests tests-coverage tests-watch install
