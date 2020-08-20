@@ -19,16 +19,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class CloudinaryFactory extends \Exception
 {
-
     /**
      * @return ResourceStorage
      */
     public static function getDefaultStorage(): ResourceStorage
     {
-        // TODO: change me after typo3 v9 migration
-        //       GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('default_cloudinary_storage')
-        $extensionConfiguration = (array)unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['cloudinary']);
-        $defaultCloudinaryStorageUid = (int)$extensionConfiguration['default_cloudinary_storage'];
+        $defaultCloudinaryStorageUid = isset($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cloudinary']['default_cloudinary_storage'])
+            ? (int)$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cloudinary']['default_cloudinary_storage']
+            : 0;
         return ResourceFactory::getInstance()->getStorageObject($defaultCloudinaryStorageUid);
     }
 
