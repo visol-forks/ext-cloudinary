@@ -71,16 +71,20 @@ class CloudinaryUploadService
 
     /**
      * @param string $fileIdentifier
+     *
+     * @return string
      */
-    protected function cleanUp(string $fileIdentifier)
+    protected function cleanUp(string $fileIdentifier): string
     {
         return DIRECTORY_SEPARATOR . ltrim($fileIdentifier, DIRECTORY_SEPARATOR);
     }
 
     /**
      * @param string $fileIdentifier
+     *
+     * @return bool
      */
-    protected function fileExists(string $fileIdentifier)
+    protected function fileExists(string $fileIdentifier): bool
     {
         $fileNameAndPath = PATH_site . ltrim($fileIdentifier, DIRECTORY_SEPARATOR);
         return is_file($fileNameAndPath);

@@ -33,6 +33,31 @@ For a new "file storage" record, then:
 * Pick the **Cloudinary** driver in the driver dropdown menu.
 * Fill in the requested fields. Password and secrets can be found from the [Cloudinary Console](https://cloudinary.com/console).
 
+You can alternatively define a JSON configuration file that will override the "local" 
+configuration if you prefer to keep the credentials outside the database. 
+
+```json
+{
+  "cloudName": "my-cloud-name",
+  "apiKey": "1234",
+  "apiSecret": "myApiSecret",
+  "apiTimeout": "60",
+  "basePath": "assets/"
+}
+```
+
+As a last possibility, you can define environment variables.
+The order of preseance is "local" configuration (Flexof)
+ 
+
+```bash
+CLOUDINARY_CLOUD_NAME = 'my-cloud-name'
+CLOUDINARY_API_KEY = '1234'
+CLOUDINARY_API_SECRET = 'myApiSecret'
+CLOUDINARY_BASE_PATH = 'assets/'
+CLOUDINARY_TIMEOUT = '60'
+```
+
 Once the record is saved, you should see a message telling the connection could be successfully established. 
 Then we must execute this command to index the storage.
 

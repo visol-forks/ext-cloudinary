@@ -11,11 +11,9 @@ namespace Visol\Cloudinary\Services;
 
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Object\ObjectManager;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
-use Visol\Cloudinary\Driver\CloudinaryDriver;
 
 /**
  * Class CloudinaryTestConnectionService
@@ -76,6 +74,7 @@ class CloudinaryTestConnectionService
             );
             $messageQueue->addMessage($message);
         }
+
     }
 
     /**
@@ -94,15 +93,30 @@ class CloudinaryTestConnectionService
      */
     protected function initializeApi()
     {
-        \Cloudinary::config(
-            [
-                'cloud_name' => $this->configuration['cloudName'],
-                'api_key' => $this->configuration['apiKey'],
-                'api_secret' => $this->configuration['apiSecret'],
-                'timeout' => $this->configuration['timeout'],
-                'secure' => true
-            ]
+        /** @var CloudinaryConfigurationService $cloudinaryConfigurationService */
+        $cloudinaryConfigurationService = GeneralUtility::makeInstance(
+            CloudinaryConfigurationService::class,
+            $this->configuration
         );
+
+        if ($cloudinaryConfigurationService->hasConfigurationFile() && !$cloudinaryConfigurationService->configurationFileExists()) {
+
+            $messageQueue = $this->getMessageQueue();
+
+            $localizationPrefix = $this->languageFile . ':driverConfiguration.message.';
+
+            /** @var \TYPO3\CMS\Core\Messaging\FlashMessage $message */
+            $message = GeneralUtility::makeInstance(
+                FlashMessage::class,
+                LocalizationUtility::translate($localizationPrefix . 'configurationFile.notFound'),
+                LocalizationUtility::translate($localizationPrefix . 'configurationFile.notFound'),
+                FlashMessage::WARNING
+            );
+            $messageQueue->addMessage($message);
+        }
+
+
+        \Cloudinary::config($cloudinaryConfigurationService->getFinalConfiguration());
     }
 
 }

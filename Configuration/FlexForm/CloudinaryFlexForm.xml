@@ -48,6 +48,15 @@
                     </config>
                 </TCEforms>
             </timeout>
+            <configurationFile>
+                <TCEforms>
+                    <label>LLL:EXT:cloudinary/Resources/Private/Language/backend.xlf:driverConfiguration.configurationFile</label>
+                    <config>
+                        <type>input</type>
+                        <default>/var/secrets/typo3-cloudinary/cloudinary-api-configuration.json</default>
+                    </config>
+                </TCEforms>
+            </configurationFile>
         </el>
     </ROOT>
 </T3DataStructure>
